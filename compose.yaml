@@ -1,0 +1,77 @@
+# Select exactly one proxy overlay. Base file never publishes a listener.
+name: civcom-push
+x-sygnal-image: &sygnal-image matrixdotorg/sygnal:v0.17.0@sha256:141f5e72fdf99a28e29ca87f3a46c19ed1cf21d5074aa3ef9df7c067e0c1c46a
+services:
+  prepare:
+    image: *sygnal-image
+    entrypoint: [python, /opt/civcom/bundle.py]
+    command: [prepare, --private-dir, /run/private, --output, /run/generated, --state-dir, /run/state]
+    environment:
+      NOTIFY_CIDRS: ${NOTIFY_CIDRS:?Set verified homeserver egress CIDRs matching private deploy.json}
+    volumes:
+      - ./bundle.py:/opt/civcom/bundle.py:ro
+      - ${PRIVATE_DIR:?Set absolute private credential directory}:/run/private:ro
+      - generated:/run/generated
+      - delivery-state:/run/state
+    read_only: true
+    tmpfs: [/tmp]
+    network_mode: none
+    cap_drop: [ALL]
+    cap_add: [CHOWN] # prepare initializes only the private state volume ownership
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+    healthcheck:
+      disable: true
+  sygnal:
+    image: *sygnal-image
+    environment:
+      SYGNAL_CONF: /run/generated/sygnal.yaml
+    volumes:
+      - ${PRIVATE_DIR:?Set absolute private credential directory}:/run/private:ro
+      - generated:/run/generated:ro
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    networks: [push]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    logging: &logging
+      driver: json-file
+      options: {max-size: 1m, max-file: "2"}
+  guard:
+    image: *sygnal-image
+    entrypoint: [python, /opt/civcom/bundle.py]
+    command: [serve, --journal, /run/state/delivery.sqlite3]
+    volumes:
+      - ./bundle.py:/opt/civcom/bundle.py:ro
+      - delivery-state:/run/state
+    depends_on:
+      sygnal:
+        condition: service_healthy
+    networks: [push]
+    user: "65534:65534"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    logging: *logging
+networks:
+  push: {}
+volumes:
+  generated: {}
+  delivery-state: {}

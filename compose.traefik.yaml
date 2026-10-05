@@ -1,0 +1,20 @@
+# Integration contract: existing Traefik runs network_mode: host.
+# Project creates its own bridge; host proxy reaches guard container IP.
+services:
+  guard:
+    networks: [push, edge]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: civcom-push-edge
+      traefik.http.routers.civcom-push.rule: Host(`push.soia.info`) && Path(`/_matrix/push/v1/notify`) && Method(`POST`)
+      traefik.http.routers.civcom-push.entrypoints: websecure
+      traefik.http.routers.civcom-push.tls: "true"
+      traefik.http.routers.civcom-push.tls.certresolver: letsencrypt
+      traefik.http.routers.civcom-push.service: civcom-push
+      traefik.http.routers.civcom-push.middlewares: civcom-push-source,civcom-push-size
+      traefik.http.middlewares.civcom-push-source.ipallowlist.sourcerange: ${NOTIFY_CIDRS:?Set verified homeserver egress CIDRs}
+      traefik.http.middlewares.civcom-push-size.buffering.maxRequestBodyBytes: "65536"
+      traefik.http.services.civcom-push.loadbalancer.server.port: "8080"
+networks:
+  edge:
+    name: civcom-push-edge

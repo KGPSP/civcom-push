@@ -1,0 +1,7 @@
+.env
+*.p8
+fcm-*.json
+private/
+generated/
+__pycache__/
+*.pyc

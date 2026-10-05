@@ -1,0 +1,16 @@
+{
+  "apns_team_id": "L643PDVV68",
+  "apns": {
+    "production": {
+      "key_id": null,
+      "keyfile": "apns-prod.p8",
+      "topics": ["pl.gov.psp.civcom"]
+    },
+    "sandbox": {
+      "key_id": null,
+      "keyfile": "apns-dev.p8",
+      "topics": ["pl.gov.psp.civcom.dev"]
+    }
+  },
+  "notify_cidrs": []
+}

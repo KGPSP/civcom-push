@@ -1,0 +1,28 @@
+{
+  "self_excluded": "public-source-manifest.json",
+  "sha256": {
+    ".gitignore": "68a04487758e528a9fe63d3a46eb631c6a7f4e6df51a4665a12d2c94ede928ee",
+    "LICENSE": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+    "PROVENANCE.md": "87dcca61865136c6ea64a8d9fa55e17f4c487be223cad9104fae8e04f69de42d",
+    "README.md": "28da6af72a998547a60653024c36fa4857fda80157d7bdf58f594376caaa3b05",
+    "bundle.py": "565df98ed0a05aaab3dd9249a1c325e280bcb4b3424c7ff839da176a9f93487f",
+    "compose.yaml": "43c654d52e0ec062798ceaa12dc47df03c40fd853c9a90bac9a784874b8ffa48",
+    "compose.traefik.yaml": "bcf2545e03f568dcf7f5c2cb979e4fb0a26d43df42a98f6abc7ba28a990526f8",
+    "compose.caddy.yaml": "e289eecae8dd06f59758c48dcd418e5885203a4f182e71a08f3ba6cbec89d872",
+    "deploy.example.json": "c735326a77e82f1d800a486fbf10252e8f3cc2e6f821ee610a87fe6061a910dc",
+    "associations/signing.example.json": "99aeeadb83cba6b564ec3159e4abe478bba263b421f928084bebc91f8471ea90",
+    "associations/oidc-metadata.example.json": "0c0c2711cb4f036828a7af2352624d3f3240a9b7ceb24283461d07dbd4928534",
+    "docs/runbook.md": "e591ae6c6b1655e910980cc8c89e5f187016ac242ae866303a1e846cd5a19e3e",
+    "docs/privacy-draft.md": "162f97f07769b8bfafa387481f6483232c05563e1703e2ea0f5459bc5064327e",
+    "docs/store-release.md": "ff4aa563e3e5ae319a874c08efb34dd804a06e2ade0ed9a79bfc17912bbd7ce0",
+    "docs/acceptance.md": "817da1664e78ce4b2fc590aa13e256daa69b42aa4d4a67856b1fb968fca47fe4",
+    "docs/reliability.md": "f8e6049353971f9202bc38fffef297a8641de13b8c2cf715c7b35045f990c4a4",
+    "docs/notification-contract.md": "7585dcbfd81efaad6ed3be6df8501c51ca561c8dae22921ffc09a04378b9b91e",
+    "tests/test_bundle.py": "6e6eee81c160e741046b1004c71a1b94e2c21287fe6ad6a4ba350b23fe38be1a",
+    "tests/test_http.py": "4ab44e557835fc5a475e68f0e1c62d5ebb6ad25bd9e222770359d299c8872c81",
+    "tests/test_ios_contract.py": "b454b0a8f1cbc64e58743c950e701cd4e0322b9156fc5ba9b8815651169803e9",
+    "tests/test_persistence.py": "9e44dd1437bf9d4c31abd2ce6b6ec64b233ffab990df334ba0363d499b46e142",
+    "tests/vendor/sygnal-apns-v0.17.0.py": "611af0bdda1c3fb6aff076583093cdfea4b1ec7f2c9de02b1257cf2edae16321",
+    "public-files.txt": "0b8499eedd6468676b8b23040805541a196f8af09fe6988a87f1cd66f973ff46"
+  }
+}

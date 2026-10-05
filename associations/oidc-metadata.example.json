@@ -1,0 +1,109 @@
+{
+  "status": "DRAFT_NOT_FOR_SERVER_IMPORT",
+  "homeserver": "https://matrix.soia.info",
+  "server_name": "soia.info",
+  "issuer": "https://auth.soia.info/",
+  "client_registration_templates": {
+    "ios-production": {
+      "application_type": "native",
+      "client_name": "CIVCOM",
+      "client_uri": "https://civcom.soia.info/apps/ios",
+      "logo_uri": "https://civcom.soia.info/znak.svg",
+      "policy_uri": "https://civcom.soia.info/privacy",
+      "tos_uri": "https://civcom.soia.info/terms",
+      "redirect_uris": [
+        "https://civcom.soia.info/oauth/ios/pl.gov.psp.civcom"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ]
+    },
+    "ios-development": {
+      "application_type": "native",
+      "client_name": "CIVCOM (development)",
+      "client_uri": "https://civcom.soia.info/apps/ios",
+      "logo_uri": "https://civcom.soia.info/znak.svg",
+      "policy_uri": "https://civcom.soia.info/privacy",
+      "tos_uri": "https://civcom.soia.info/terms",
+      "redirect_uris": [
+        "https://civcom.soia.info/oauth/ios/pl.gov.psp.civcom.dev"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ]
+    },
+    "android-production": {
+      "application_type": "native",
+      "client_name": "CIVCOM",
+      "redirect_uris": [
+        "pl.gov.psp.civcom:/"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ],
+      "client_uri": "https://civcom.soia.info/apps/android",
+      "logo_uri": "https://civcom.soia.info/znak.svg",
+      "policy_uri": "https://civcom.soia.info/privacy",
+      "tos_uri": "https://civcom.soia.info/terms"
+    },
+    "android-debug": {
+      "application_type": "native",
+      "client_name": "CIVCOM (debug)",
+      "redirect_uris": [
+        "pl.gov.psp.civcom.debug:/"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ],
+      "client_uri": "https://civcom.soia.info/apps/android",
+      "logo_uri": "https://civcom.soia.info/znak.svg",
+      "policy_uri": "https://civcom.soia.info/privacy",
+      "tos_uri": "https://civcom.soia.info/terms"
+    },
+    "android-nightly": {
+      "application_type": "native",
+      "client_name": "CIVCOM (nightly)",
+      "redirect_uris": [
+        "pl.gov.psp.civcom.nightly:/"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ],
+      "client_uri": "https://civcom.soia.info/apps/android",
+      "logo_uri": "https://civcom.soia.info/znak.svg",
+      "policy_uri": "https://civcom.soia.info/privacy",
+      "tos_uri": "https://civcom.soia.info/terms"
+    }
+  },
+  "blockers": [
+    "MAS acceptance of native clients/PKCE and exact redirect URIs",
+    "Approved published privacy and terms",
+    "Signed app domain association acceptance",
+    "Administrator-only user provisioning policy verified server-side"
+  ]
+}
