@@ -1,0 +1,48 @@
+# CIVCOM push — kontrakt ponowień i wyników niepewnych
+
+Pakiet nie gwarantuje dokładnie jednego alertu APNs/FCM. Dostawca może przyjąć request, a odpowiedź zaginąć; wewnętrzne retry Sygnal nadal mogą powtórzyć wysyłkę. Cache ogranicza ponowne zgłoszenia przez nasz guard, obejmując konkretne event_id/room_id/app_id/pushkey. Scope działań jest ograniczony do tego gatewaya, bez nowej bazy rozmów lub kolejki biznesowej.
+
+## Zachowanie protokołu
+
+- Counts-only: po walidacji count / device, pustych legacy id/sender oraz type:null (rzeczywisty Synapse) lub type:"" (kompatybilność) HTTP 200 `{"rejected":[]}`, zero requestów Sygnal, zero alertów. Niepuste pola preview i błędne typy nadal400.
+- Zdarzenie: SQLite FULL commit statusu pending i SHA256 tożsamości przed rozpoczęciem transportu. Każde urządzenie jest kierowane do Sygnal osobnym requestem; maksymalnie 32 transporty jednocześnie. Nadmiar otrzymuje 503 i pozostaje not_submitted, więc później wolno spróbować bez wcześniejszej wysyłki.
+- Pierwszy request HTTP czeka maksymalnie 25 s na wynik. Worker kontynuuje odbiór Sygnal do 900 s, nawet po zerwaniu połączenia homeservera. Ponowienie tego samego klucza dołącza do istniejącego pending; nie inicjuje kolejnego transportu. Stan kompletnego, poprawnego HTTP 200 Sygnal daje 200 z dokładną listą rejected tokenów tej próby; cache zapisuje jedynie status, nigdy token.
+- Gdy worker nadal pracuje, guard oddaje 503. Timeout900s, błędna odpowiedź lub brak znanego wyniku daje uncertain, HTTP 502 tylko dla odpowiadającego klucza. Po utracie procesu zapisane pending przechodzi przy starcie do uncertain. Nie ma automatycznego ponowienia lub usuwania niepewnego klucza.
+- Inne zdarzenia/urządzenia pozostają obsługiwane. Health pozostaje200 dla samej niepewności; `/status` jest degraded, z liczbą niepewnych rekordów i ich wiekiem, wyłącznie na sieci wewnętrznej. Globalna blokada jest właściwa dla błędnych credentials, uszkodzonego/journalu lub braku pojemności, nie dla jednego wyniku sieciowego.
+
+To ostatnie rozwiązanie ma koszt dostępności: Synapse może serializować kolejne zdarzenia danego pushera za zdarzeniem otrzymującym502. Ten pusher wymaga wtedy operatora; nie jest globalnie zatrzymywany gateway. Nie ukrywamy nieznanego dostarczenia HTTP 200 ani nie nazywamy go sukcesem urządzenia. Operator musi obsłużyć problem przed końcem horyzontu ponowień homeservera; nie należy pozostawiać uncertain bez nadzoru. Jeżeli horyzont już minął, po rozstrzygnięciu może być potrzebne kontrolowane ponowienie syntetycznie przygotowanego requestu przez uprawnionego operatora, z właściwą tożsamością konta/urządzenia, bez publikowania tokenu.
+
+## Koordynacja timeoutów
+
+Pinned Sygnal v0.17.0 robi 3 próby z typowym backoff10/20s, FCM quota60/120/240s. Czas900s na jedno urządzenie obejmuje zwykłe quota sleeps420s oraz duży margines na transport, ale provider Retry-After może przekroczyć ten budżet. Deadline zamyka połączenie do Sygnal i zapisuje uncertain; nie jest dowodem anulowania operacji Apple/Google. Dedup chroni przed ponownym zgłoszeniem do Sygnal, a nie przed niepewnością samego dostawcy.
+
+Zalecany kontrakt przed pilotem: pełny timeout pushera Synapse co najmniej 35 s; istniejące proxy co najmniej 30 s na odpowiedź guard; guard czyta body do 5 s i czeka na wynik do 25 s; transport Sygnal ma 900 s na urządzenie niezależnie od tych odpowiedzi. Caddy overlay jawnie ma `response_header_timeout 30s`. Dla istniejącego Traefika należy sprawdzić jego faktyczne timeouty przed wdrożeniem; etykiety usługi nie deklarują wymyślonego istniejącego ServersTransport. Krótszy timeout zewnętrzny nie powinien powielać zgłoszenia dzięki cache, ale zmienia przebieg retry i musi przejść test. Faktyczny Synapse/Traefik/Caddy nie został uruchomiony lub zmieniony przez autora.
+
+Testy lokalne obejmują rzeczywisty 16 s opóźniony sukces przekraczający poprzednie 15 s, ponowienie po sukcesie, pending retry i restart cache, deadline z późniejszą syntetyczną dostawą bez drugiego requestu, restart z uncertain + reconciliation oraz inne zdarzenie dostarczone podczas niepewności. Scaled fixtures używają krótszych budżetów do zbadania ścieżek; nie dowodzą 900 s pracy obrazu Sygnal ani rzeczywistego provider Retry-After.
+
+## Prywatny cache i jego granice
+
+Volume delivery-state zawiera SHA256 tożsamości, status i czas; tabela reconciliation zawiera hash dowodu, wybraną akcję i czas. Brak raw tokenu, event_id, room_id, body/nadawcy lub innych treści. SHA256 nadal jest pseudonimizowaną metadaną, nie zapewnieniem anonimizacji. Directory0700, plik0600, UID65534, SQLite synchronous FULL, secure_delete ON, bez WAL. Runtime wykorzystuje wyłącznie sqlite3 z biblioteki standardowej obrazu Python Sygnal.
+
+Techniczny limit:100000 rekordów, main DB maksymalnie 32MiB; rollback journal może chwilowo dodać do 32 MiB. Zapewnić co najmniej 64 MiB plus rezerwę operacyjną dla volume. Cache terminalny complete / rejected i not_submitted ma 48 h; sprzątanie następuje podczas nowych requestów/health. To propozycja technicznego horyzontu, nie zatwierdzona retencja KG PSP. Przed przyjęciem tej konfiguracji potwierdzić, że rzeczywisty Synapse nie ponawia dłużej niż 24 h; poza 48 h ochrona przed powtórzeniem wygasa. Inaczej właściciel musi uzgodnić większy cache/horyzont i odpowiednie limity przed wydaniem.
+
+Uncertain nie jest automatycznie usuwany: zachowanie go chroni przed ponowną wysyłką nieznanej operacji. Operator i zatwierdzony proces mają rozstrzygać niepewność w ciągu 24 h, a unresolved records podlegają limitom pojemności; nie ustanawiamy domniemanej prawnej retencji bezterminowej. To blokada procesu/retencji przed produkcyjną akceptacją. Backupy volume mają podlegać temu samemu zatwierdzonemu procesowi. Utrata volume lub `down -v` znosi cache i może spowodować powtórny alert. Obsługujemy jedną instancję guard; nie skalować replik ze wspólnym SQLite bez osobnego projektu/akceptacji.
+
+## Rozstrzygnięcie operatorskie
+
+Nie ma publicznego endpointu administracyjnego. Właściciel uruchamia CLI z dostępem wyłącznie do chronionego volume; poniższe polecenia są przyszłą instrukcją, nie wykonanymi mutacjami:
+
+1. `docker compose -f compose.yaml -f compose.traefik.yaml run --rm --no-deps guard journal-status --journal /run/state/delivery.sqlite3`. Wynik to tylko zliczenia/age/limits; polecenie nie konwertuje aktualnego pending do uncertain. Monitorować degraded od pierwszego wystąpienia i eskalować w uzgodnionym czasie, zamiast czekać na pełny cache.
+2. Z prywatnego, uprawnionego requestu z właściwym event/device, na hostcie operatora: `python3 bundle.py journal-key --notification-file /private/notify.json`. Zwraca hash klucza, bez drukowania body lub tokenu. Nie udostępniać requestu/evidence publicznie.
+3. Ustalić wynik u dostawcy/urządzenia, zatrzymać stare dispatch Sygnal i odczekać zamknięcie procesów przed retry. Samo rozłączenie HTTP nie spełnia tego warunku. Zgromadzić prywatny dowód i uzgodnić explicit action: `retry` przy dowodzie niedostarczenia, `suppress` przy potwierdzonym dostarczeniu albo świadomej decyzji o nieponawianiu, `reject` tylko przy potwierdzonym nieważnym tokenie. Retry niepewnej operacji z niepełnym dowodem może powtórzyć alert; suppress może pozostawić brak alertu. To jawna decyzja operatora, nie obietnica exactly-once.
+4. `python3 bundle.py journal-reconcile --journal /private/delivery.sqlite3 --digest HASH --action retry --evidence-file /private/evidence.txt --confirm-upstream-stopped` (odpowiednia akcja według pkt3). Zapisuje hash dowodu i akcję. Dostęp do właściwego volume/file musi zapewnić operator; nie kopiować cache do publicznego repo. Bez potwierdzenia zatrzymania starego upstream lub dla klucza niebędącego uncertain operacja jest odrzucona.
+5. Wznowić Sygnal i kontrolować wynik pushera. Retry ustawia not_submitted; kolejne prawidłowe ponowienie może rozpocząć jedną nową próbę. Zatwierdzone suppress/reject pozwala zwrócić zgodny wynik z cache. Zachować evidence wraz z planem retencji, bez sekretów.
+
+
+## Awaria utrwalenia wyniku — korekta po re-review
+
+Błąd SQLite przy terminalnym zapisie lub zapisie watchdoga ustawia w działającym guard pamięciowy `persistence_failed` i budzi oczekujących. `/health` daje503, `/status` jest degraded i pokazuje ten flag; nowe transporty oraz ponowienia są blokowane503 aż do bezpiecznego restartu. Odblokowanie samego dysku nie czyści flagi, ponieważ wynik wysyłki nadal nie został wiarygodnie utrwalony. Watchdog zamyka transport nawet przy błędzie zapisu; worker zawsze zwalnia permit, także gdy nie uda się zamknąć transportu lub utrwalić wyniku.
+
+Operator przywraca możliwość poprawnego zapisu, zachowuje volume i wykonuje kontrolowany restart guard. Inicjalizacja po restarcie musi pomyślnie utrwalić pending→uncertain przed startem listenera; w przeciwnym razie start jest odrzucony. Nie ma resetu lub automatycznej powtórnej wysyłki utraconego wyniku. Pusher dla tego klucza otrzymuje502 i podlega istniejącej procedurze reconciliation, a inne zdarzenia z działającym storage znów są obsługiwane. To globalna blokada błędu integralności trwałego stanu; zwykła niepewność sieciowa pozostaje ograniczona do swojego klucza.
+
+`persistence_failed` to flaga lokalna procesu, bo niedostępny storage nie może bezpiecznie zapisać własnego błędu. Działający guard `/status` i `/health` są źródłem stanu usługi; osobny `journal-status` CLI jest odczytem pliku przez inny proces i nie pokazuje pamięciowej flagi działającego guard. W CLI nadal widać zachowane pending; kontrolowany restart rozstrzyga je jako uncertain. Wszystkie próby storage są syntetyczne: rzeczywisty SQL trigger abort i lokalne I/O, nie faktyczna awaria dysku targetu.

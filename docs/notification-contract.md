@@ -1,0 +1,19 @@
+# CIVCOM iOS — kontrakt payloadu i świadectwo lokalnych prób
+
+`NotificationManager` rejestruje pusher event_id_only z `APNSPayload`, zawierającym `pusher_notification_client_identifier`. Inspekcja rzeczywistego `ClientProxy` potwierdziła SHA256 z UTF8 userID, zapisane przez `%02x`: 64 małe znaki hex. Guard waliduje tę postać i przekazuje niezmienioną wartość wyłącznie dla zdarzeń APNs. Nie wyznacza receiver_id i nie zastępuje dopasowania credentials w aplikacji.
+
+Po guard i pinned Sygnal APNs mają dokładnie: canonical `aps`, client identifier, `room_id`, `event_id`. `aps.alert` to słownik `title: CIVCOM`, `body: Nowa wiadomość`, z `mutable-content: 1` i domyślnym dźwiękiem. Apple dokumentuje alert dictionary/title/body oraz mutable-content jako kontrakt [Notification Service Extension](https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/ModifyingNotifications.html). Caller sender/body/room_name/media/receiver_id i wszystkie pozostałe default-payload options są usuwane. Android dostaje data bez tych metadata.
+
+Przy braku lub złym typie/formatcie client identifier zdarzenie APNs jest odrzucane400 przed journal claim i wysyłką. Złe urządzenie w batch blokuje malformed request w całości — nie ma częściowej wysyłki przed zakończeniem walidacji. Counts-only nadal dostaje200 bez alertu lub wymogu client identifier. Zapis metadata i przyjęty kontrakt retry/uncertain nie zostały zmienione przez tę korektę.
+
+NSE odczytuje client ID, dopasowuje go do restoration token, a authenticated session/notification builder nadaje receiver_id. Dopiero potem tap może przejść guard roomID+receiverID w AppCoordinator. Client ID z payloadu nie jest autoryzacją ani dowodem zalogowania; prawdziwe credentials i SDK nadal muszą być zgodne. W szczególności nie ufamy caller receiver_id jako sposobowi obejścia tego kroku.
+
+Hash klienta jest **pseudonimowy i korelowalny, nie anonimowy**. Jest stabilny dla konta i może być powiązany z tokenem urządzenia, pokoi/zdarzeń lub znaną nazwą użytkownika. Traktować go jako metadane: ograniczony dostęp/logowanie, zatwierdzona inwentaryzacja odbiorców i retencja przed produkcyjną akceptacją. Guard nie zapisuje go oddzielnie w dedup cache; cache pozostaje SHA256(event/room/app/token), status/time i hash dowodu. Firebase jest potrzebny do FCM; pakiet nie tworzy bazy wiadomości/chat database.
+
+## Świadectwo prób — granica dowodu
+
+Publiczny test generator w tests/test_ios_contract.py odtwarza rzeczywisty registered-pusher shape, wyznacza SHA256 syntetycznego userID i base64 z syntetycznych32 bytes device token. Następnie rzeczywisty sanitize guard oraz **byte-identical pinned Sygnal v0.17.0 `_get_payload_event_id_only`**, wykonany izolowanie przez AST, składają APNs payload. Test sprawdza client ID/exact restoration lookup eligibility, room/event IDs, dictionary APS, brak receiver_id i brak previews. Są też missing/null/nonstring/bad-format, różne konta/dev/prod+Android, malformed mixed batch bez requestów i counts-only bez metadata.
+
+To local source-derived contract witness, bez Google/Apple i bez uruchomienia kontenera. Python lookup fixture pokazuje wymagane dane wejściowe NSE; nie jest wykonaniem Swift NSE, pobraniem prawdziwych credentials ani rzeczywistym tapem. Native NotificationManager/ContentBuilder/NSE/routing tests prowadzi odrębnie autor iOS. Każdy native wynik wymaga własnego SHA, polecenia, exit/log i granicy runtime.
+
+Author full source suite32 tests PASS, Compose parsing/compile PASS na etapie lokalnym; historyczne RED i dokładne komendy są prywatnym materiałem review, nie częścią publicznego pakietu. Actual signing/profiles, native restored session/tap, locked/offline/time-expiry, APNs/FCM, DNS/TLS i deployment nadal NOT_RUN. To świadectwo autora, nie niezależna akceptacja urządzeń lub sklepu.
