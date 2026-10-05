@@ -16,6 +16,7 @@ Każdy wynik musi zawierać faktyczny SHA Android/iOS, hash podpisanego binarium
 | Prywatność sieci | Brak zakazanej telemetrii na obu urządzeniach; lista pozostałych requestów i metadanych |
 | Gateway boundary | TLS, własna sieć, brak public5000/8080, obce źródło odrzucone, brak body w logach, błąd klucza blokuje nowy start |
 | Pusher | Prawdziwy account pushers: dokładny app_id/url/format event_id_only, rejestracja/rotacja/unregister po logout |
+| Count-only | Standardowy i rzeczywisty Synapse read-receipt/unread-count update: HTTP 200/rejected[], zero requestów upstream i zero alertów; brak badge forwarding |
 | Android push | FCMv1 release i dev/nightly, foreground/background/killed/locked/offline, token rotation, denied permission, generic preview |
 | iOS push | Sandbox Debug i production podpisany/TestFlight, NSE + appgroup, fore/back/killed/locked/offline, brak treści/nadawcy/pokoju |
 | Negatywne provider | Błędny token/topic/środowisko, cofnięte IAM/klucz, outage/retry i cleanup odrzuconego pushkey; bez fake PASS po health200 |
@@ -23,4 +24,4 @@ Każdy wynik musi zawierać faktyczny SHA Android/iOS, hash podpisanego binarium
 | Pilotaż | Podpisana ograniczona próba użytkowników, operator, monitoring, rollback i odtworzenie |
 | Sklepy | Faktyczne submission/review/publishing evidence, oddzielnie od signed build |
 
-Ograniczenie gatewaya: wiadomości bez event_id/room_id oraz count-only payload są odrzucane. Potwierdzić z faktycznym Synapse czy wymaga to dodatkowego bezpiecznego obsłużenia aktualizacji liczników, przed oznaczeniem push PASS. Health/readiness nie testuje uprawnień FCM/APNs ani dostarczania. OIDC schematy Android są prywatnymi URI; assetlinks na domenie nie dowodzi ochrony custom-scheme callback — kontrola state/PKCE/SDK musi przejść test native.
+Zwalidowane aktualizacje count-only (forma standardowa oraz Synapse: id pusty, type null, sender pusty) otrzymują HTTP 200 z {"rejected":[]} jako no-op: zero requestów do Sygnal/dostawców i zero alertów. Brak event_id/room_id jest prawidłowy dla tej aktualizacji; zdarzenia nadal wymagają obu identyfikatorów. Przed oznaczeniem push PASS potwierdzić z faktycznym Synapse aktualizację licznika po read receipt, odpowiedź 200 i brak dodatkowego powiadomienia. Gateway nie przekazuje liczników/badge do dostawców. Health/readiness nie testuje uprawnień FCM/APNs ani dostarczania. OIDC schematy Android są prywatnymi URI; assetlinks na domenie nie dowodzi ochrony custom-scheme callback — kontrola state/PKCE/SDK musi przejść test native.
