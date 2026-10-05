@@ -22,3 +22,9 @@ tests/test_persistence.py
 tests/vendor/sygnal-apns-v0.17.0.py
 public-files.txt
 public-source-manifest.json
+associations/cloudflare/worker.mjs
+associations/cloudflare/association.json
+associations/cloudflare/wrangler.jsonc
+associations/cloudflare/worker.test.mjs
+associations/cloudflare/origin-baseline.json
+associations/cloudflare/README.md
