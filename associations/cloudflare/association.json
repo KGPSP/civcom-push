@@ -30,6 +30,16 @@
             "/": "/oauth/ios/pl.gov.psp.civcom.dev"
           }
         ]
+      },
+      {
+        "appIDs": [
+          "L643PDVV68.pl.gov.psp.civcom"
+        ],
+        "components": [
+          {
+            "/": "/oauth/ios/pl.gov.psp.civcom"
+          }
+        ]
       }
     ]
   },
@@ -38,7 +48,8 @@
       "7J4U792NQT.im.vector.app",
       "7J4U792NQT.io.element.elementx",
       "7J4U792NQT.io.element.elementx.nightly",
-      "L643PDVV68.pl.gov.psp.civcom.dev"
+      "L643PDVV68.pl.gov.psp.civcom.dev",
+      "L643PDVV68.pl.gov.psp.civcom"
     ]
   }
 }

@@ -5,6 +5,7 @@ import worker from './worker.mjs';
 
 const old = JSON.parse(readFileSync(new URL('./origin-baseline.json', import.meta.url)));
 const dev = 'L643PDVV68.pl.gov.psp.civcom.dev';
+const prod = 'L643PDVV68.pl.gov.psp.civcom';
 const paths = ['/apple-app-site-association', '/.well-known/apple-app-site-association'];
 
 test('both public endpoints serve identical additive JSON and retain all existing associations', async () => {
@@ -17,9 +18,10 @@ test('both public endpoints serve identical additive JSON and retain all existin
     assert.equal(r.headers.has('location'), false);
   }
   const merged = JSON.parse(bodies[0]);
-  assert.deepEqual(merged.webcredentials.apps, [...old.webcredentials.apps, dev]);
+  assert.deepEqual(merged.webcredentials.apps, [...old.webcredentials.apps, dev, prod]);
   assert.deepEqual(merged.applinks.details.slice(0, old.applinks.details.length), old.applinks.details);
-  assert.deepEqual(merged.applinks.details.at(-1), { appIDs: [dev], components: [{ '/': '/oauth/ios/pl.gov.psp.civcom.dev' }] });
+  assert.deepEqual(merged.applinks.details.at(-2), { appIDs: [dev], components: [{ '/': '/oauth/ios/pl.gov.psp.civcom.dev' }] });
+  assert.deepEqual(merged.applinks.details.at(-1), { appIDs: [prod], components: [{ '/': '/oauth/ios/pl.gov.psp.civcom' }] });
 });
 
 test('HEAD has the same headers and no body', async () => {
