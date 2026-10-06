@@ -25,10 +25,10 @@
     "tests/vendor/sygnal-apns-v0.17.0.py": "611af0bdda1c3fb6aff076583093cdfea4b1ec7f2c9de02b1257cf2edae16321",
     "public-files.txt": "a77dde3cb1dece89501231c1d48c2a830a9793b9dd4dc4846e8c0660bc395d63",
     "associations/cloudflare/worker.mjs": "ce9c17c458e730487cf4870fecb85834ddf2a7e08a4f2dedee6151a37482ab07",
-    "associations/cloudflare/association.json": "cadc800122a994680e2b3457778ea7e4cbee57e42a4de25c896bf4010b74c203",
+    "associations/cloudflare/association.json": "efd5d7dba456c5c51cf653d554b9e7465a73599d222766ed92b0ae3f4f453dbc",
     "associations/cloudflare/wrangler.jsonc": "508aaa09f46705473d8bdfd954cf9db3d280ba36c336d6d41d2ab4a2e3b1a0b8",
-    "associations/cloudflare/worker.test.mjs": "b13f28238bb915dd1823d22947b36ca259679ae63a0c04520c1f7f01800fd057",
+    "associations/cloudflare/worker.test.mjs": "d4eccbd3571bf9e42951b1102d0f984059cbf61edadce5be0c4076c3e4e7476b",
     "associations/cloudflare/origin-baseline.json": "3693aa26355f8229718e7ba34304306de8881e7bd1be06d19a450832079c64b7",
-    "associations/cloudflare/README.md": "c291d96f76f331de56be89f0dc6b35b492f5d4095ec82186632cb8d7ac542485"
+    "associations/cloudflare/README.md": "8bc3b5354a3f3d4375308c15beb7eda88ccd05a84f1d2dee7fc029ebf8e91b1d"
   }
 }
